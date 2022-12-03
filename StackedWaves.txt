@@ -1,0 +1,69 @@
+import bpy
+import math
+import random
+
+
+#dimensions
+x_length = 10.0
+y_length = x_length
+
+x_points = 101
+y_points = x_points
+
+x_diff = x_length/(x_points-1)
+y_diff = y_length/(y_points-1)
+
+def make_plane(z_offset):
+    verts = []
+    edges = []
+    faces = []
+
+    #3d function
+    waves = 3
+    amplitudes = []
+    frequencies = []
+    offsets = []
+
+    for i in range(waves*2):
+        amplitudes.append(random.uniform(.1, .4))
+        frequencies.append(random.uniform(0.5*math.pi/(x_length),4*math.pi/(x_length)))
+        offsets.append(random.uniform(0, x_length))
+
+    def function(x, y):
+        z = 0
+        for i in range(0,waves*2,2):
+            z += amplitudes[i]*math.cos((x+y+offsets[i])*frequencies[i])
+            z += amplitudes[i+1]*math.cos((x-y+offsets[i+1])*frequencies[i+1])
+        z += z_offset
+        return z
+
+    #create vertices
+    for i in range(x_points):
+        for j in range(y_points):
+            x = i*x_diff
+            y = j*y_diff
+            z = function(x, y)
+            verts.append([x,y,z])
+
+    #create faces
+    for i in range(x_points-1):
+        for j in range(y_points-1):
+            ll = i*y_points + j
+            ul = i*y_points + j + 1
+            lr = (i+1)*y_points + j
+            ur = (i+1)*y_points + j + 1
+            faces.append([ll, lr, ur, ul])
+
+
+    #add to mesh
+    name = "New Object"
+    mesh = bpy.data.meshes.new(name)
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.collection.objects.link(obj)
+    bpy.context.view_layer.objects.active = obj
+    mesh.from_pydata(verts, edges, faces)
+
+    bpy.ops.object.shade_smooth()
+
+for i in range(10):
+    make_plane(i*3/4)
